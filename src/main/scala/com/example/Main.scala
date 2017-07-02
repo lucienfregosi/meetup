@@ -1,23 +1,42 @@
 package com.example
 
+import org.apache.spark.sql.{SQLContext, SparkSession}
 import org.apache.spark.{SparkConf, SparkContext}
 
 object Main {
 
   def main(args: Array[String]): Unit = {
 
-    val conf =
-      new SparkConf().setAppName("Stackoverflow analysis").setMaster("local")
-    val sc = new SparkContext(conf)
+    val spark = SparkSession
+      .builder()
+      .appName("Stack Overflow Analysis")
+      .master("local[2]")
+      .getOrCreate()
 
-    val logFile = "src/main/resources/log4j.properties"
-    val logData = sc.textFile(logFile, 2).cache()
-    val numAs = logData.filter(line => line.contains("a")).count()
-    val numBs = logData.filter(line => line.contains("b")).count()
-    println("Lines with a: %s, Lines with b: %s".format(numAs, numBs))
+    import spark.implicits._
 
-    sc.stop()
+    //val df = spark.read.format("com.databricks.spark.csv").option("header", "true").load("/home/lucien/dev/meetup/meetupStack/resources/data/post.csv")
 
+
+    val df = spark.read.csv("/home/lucien/dev/meetup/meetupStack/resources/data/post.csv")
+    val header = Seq("Id","PostTypeId","AcceptedAnswerId","ParentId","CreationDate",
+      "DeletionDte","Score","ViewCount","Body","OwnerUserId","OwnerDisplayName",
+      "LastEditorUserId","LastEditorDisplayName","LastEditDate","LastActivityDate",
+      "Title","Tags","AnswerCount","CommentCount","FavoriteCount","ClosedDate",
+      "CommunityOwnedDate")
+
+    val dfWithHeader = df.toDF(header: _*)
+
+    // Nettoyages des caractères à la con
+
+    // Créer un DF id, creation, date where contains scala
+    val dfScala = dfWithHeader.filter($"tags".contains("scala"))
+
+    dfScala.count
+
+
+
+    df.show
 
 
 
