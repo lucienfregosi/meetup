@@ -1,23 +1,26 @@
 package com.example
 
+import org.apache.spark.{SparkConf, SparkContext}
+
 object Main {
 
   def main(args: Array[String]): Unit = {
 
-    println("\n\n\n/* ********************* Start Quick Start Examples *********************************************** */")
-    QuickStart.runCode()
-    println("/* --------------------- End Quick Start Examples ------------------------------------------------- */\n\n\n")
+    val conf =
+      new SparkConf().setAppName("Stackoverflow analysis").setMaster("local")
+    val sc = new SparkContext(conf)
 
-    println("/* ********************* Start Programming Guide SQL Examples ************************************* */")
-    ProgrammingGuideSQL.runCode()
-    println("/* --------------------- End Programming Guide SQL Examples --------------------------------------- */\n\n\n")
+    val logFile = "src/main/resources/log4j.properties"
+    val logData = sc.textFile(logFile, 2).cache()
+    val numAs = logData.filter(line => line.contains("a")).count()
+    val numBs = logData.filter(line => line.contains("b")).count()
+    println("Lines with a: %s, Lines with b: %s".format(numAs, numBs))
 
-    println("/* ********************* Start Programming Guide Creating Datasets Examples *********************** */")
-    CreatingDatasets.runCode()
-    println("/* --------------------- End Programming Guide Creating Datasets Examples ------------------------- */\n\n\n")
+    sc.stop()
 
 
-    /* ****************************************************************************** */
+
+
 
   }
 
