@@ -1,4 +1,4 @@
-name := """apache-spark-2-scala-starter-template"""
+name := """Spark meetup"""
 
 version := "1.0"
 
@@ -9,15 +9,19 @@ libraryDependencies ++= Seq(
   "org.apache.spark" %% "spark-core" % "2.0.0",
   "org.apache.spark" %% "spark-sql" % "2.0.0",
   "org.postgresql" % "postgresql" % "9.4.1209.jre7",
-  "com.databricks" % "spark-csv" % "1.5.0-s_2.11",
   "log4j" % "log4j" % "1.2.17",
+  "org.apache.spark" % "spark-mllib_2.11" % "2.0.0",
+  "com.cloudera.sparkts" % "sparkts" % "0.4.0",
   "org.scalatest" %% "scalatest" % "2.2.6" % Test)
+
 
 javaOptions in (Test, run) ++= Seq("-Dspark.master=local",
   "-Dlog4j.debug=true",
   "-Dlog4j.configuration=log4j.properties")
 
 outputStrategy := Some(StdoutOutput)
+
+
 
 fork := true
 

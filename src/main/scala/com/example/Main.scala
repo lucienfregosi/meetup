@@ -1,9 +1,16 @@
 package com.example
 
+import java.text.SimpleDateFormat
+
 import org.apache.spark.sql.{SQLContext, SparkSession}
 import org.apache.spark.sql.functions._
+import com.cloudera.sparkts.models.ARIMA
+import org.apache.spark.mllib.linalg.Vectors
+
 
 object Main {
+
+  case class Post(PostTypeId: String, CreationDate: String, Tags: String)
 
   def main(args: Array[String]): Unit = {
 
@@ -13,7 +20,7 @@ object Main {
       .master("local[2]")
       .getOrCreate()
 
-    import spark.implicits._
+    import spark.sqlContext.implicits._
 
     //val df = spark.read.format("com.databricks.spark.csv").option("header", "true").load("/home/lucien/dev/meetup/meetupStack/resources/data/post.csv")
 
@@ -38,7 +45,8 @@ object Main {
     val dfQuestions = dfShort.filter($"PostTypeId" === 1)
 
     // Garder ceux qui contiennent le mot scala
-    val dfScala = dfQuestions.filter($"Tags".contains("scala"))
+
+    val dfScala = dfQuestions.filter($"Tags".contains("grammaire")).as[Post]
 
     // Calculer le nombre d'autres tages
     val dsPost = dfQuestions.select("Tags").as[String]
@@ -53,20 +61,34 @@ object Main {
     // Comptage et tri de la liste de tags
     val counts = dsGroupTag.count().withColumnRenamed("count(1)","cnt").sort(desc("cnt"))
 
-
     // Faire la distribution mensuelle
+    val srcDateFormat   = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS")
+    val targetDateFormat = new SimpleDateFormat("yyyy-MM")
+    val dfDistributedMonthly = dfScala.map(x => targetDateFormat.format(srcDateFormat.parse(x.CreationDate.toString)))
 
 
-    // Récupérer la même chose avec une liste de languages
+    // On les groupe par mois
+    val dfDateGrouped = dfDistributedMonthly.groupBy("value").count().sort("value").toDF().select("count").as[Long]
+    //dfDateGrouped.coalesce(1).write.csv("test.csv")
 
 
-    // Prévision de chacun des languages pour les 3 ans à venir
+    // The dataset is sampled from an ARIMA(1, 0, 1) model generated in R.
+
+    val ts = Vectors.dense(dfDateGrouped.map(_.toDouble).collect().toList.toArray)
+    val arimaModel = ARIMA.fitModel(1, 0, 0, ts)
+    println("coefficients: " + arimaModel.coefficients.mkString(","))
+    val forecast = arimaModel.forecast(ts, 50)
+    println("forecast of next 50 observations: " + forecast.toArray.mkString(","))
 
 
-    // Affichage sur un graphique
+    // Trou
+    // Faire une liste de Trois languages
+    // Enregistrer dans Elasticsearch
+    // Voir les requetes sur kibana
 
 
-    df.show
+
+
 
 
 
